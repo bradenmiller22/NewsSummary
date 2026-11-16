@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Preferences</h1>
+<form method="post" action="/preferences" class="prefs">
+  <label>Location <input name="location" placeholder="Iowa City, IA" value="{{ profile.location if profile else '' }}"></label>
+  <label>Favorite teams (comma-separated) <input name="teams" placeholder="Iowa Hawkeyes, Chicago Cubs" value="{{ profile.teams|join(', ') if profile else '' }}"></label>
+  <label>Leagues <input name="leagues" placeholder="ncaafb, mlb" value="{{ profile.leagues|join(', ') if profile else '' }}"></label>
+  <label>Topics of interest <input name="topics" placeholder="technology, business, local politics" value="{{ profile.topics|join(', ') if profile else '' }}"></label>
+  <label>Summary length
+    <select name="depth">
+      {% for d in ["brief", "standard", "deep"] %}
+        <option value="{{ d }}" {% if profile and profile.depth.value == d %}selected{% endif %}>{{ d|capitalize }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Source leaning
+    <select name="leaning">
+      {% for l in ["balanced", "left", "right"] %}
+        <option value="{{ l }}" {% if profile and profile.leaning == l %}selected{% endif %}>{{ l|capitalize }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="check"><input type="checkbox" name="audio" value="true" {% if profile and profile.audio %}checked{% endif %}> Generate audio version</label>
+  <button>Save</button>
+</form>
+{% endblock %}

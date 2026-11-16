@@ -1,0 +1,8 @@
+[
+  {
+    "id": 1,
+    "source": "PASTE ARTICLE TEXT HERE (150-300 words).",
+    "summary": "PASTE SUMMARY HERE (faithful, or hand-edited with one planted error).",
+    "planted_error": null
+  }
+]

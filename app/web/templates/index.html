@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="toolbar">
+  <h1>Your brief{% if digest %} · {{ digest.created_at.strftime("%A, %B %d") }}{% endif %}</h1>
+  <form method="post" action="/run"><button>Run pipeline now</button></form>
+</div>
+
+{% if not digest %}
+  <p class="muted">No digest yet. Click “Run pipeline now” to generate one.</p>
+{% else %}
+  {% if digest.audio_path %}
+    <audio controls src="/{{ digest.audio_path }}"></audio>
+  {% endif %}
+
+  {% for item in digest.items %}
+  <article class="story">
+    <h2>{{ item.headline }}</h2>
+    <p>{{ item.summary.text }}</p>
+    <ol class="sources">
+      {% for c in item.summary.citations %}
+        <li><a href="{{ c.url }}" target="_blank" rel="noopener">{{ c.title }}</a></li>
+      {% endfor %}
+    </ol>
+    <form method="post" action="/feedback" class="feedback">
+      <input type="hidden" name="story_id" value="{{ item.story_id }}">
+      <button name="value" value="1">👍</button>
+      <button name="value" value="-1">👎</button>
+    </form>
+  </article>
+  {% endfor %}
+
+  {% if digest.game_recaps %}
+  <section>
+    <h2>Scores</h2>
+    <ul>{% for r in digest.game_recaps %}<li>{{ r }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+
+  {% if digest.highlights %}
+  <section>
+    <h2>Highlights</h2>
+    <ul>{% for h in digest.highlights %}<li><a href="{{ h.url }}" target="_blank" rel="noopener">{{ h.title }}</a></li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+{% endif %}
+{% endblock %}

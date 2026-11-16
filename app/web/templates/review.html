@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Review queue</h1>
+{% if not items %}
+  <p class="muted">Nothing flagged by the fact-checker.</p>
+{% endif %}
+{% for item in items %}
+<article class="story">
+  <p>{{ item.text }}</p>
+  <p><strong>Unsupported claims:</strong></p>
+  <ul>{% for c in item.claims %}<li>{{ c }}</li>{% endfor %}</ul>
+  <form method="post" action="/review/{{ item.id }}">
+    <input name="note" placeholder="Reviewer note (optional)">
+    <button name="action" value="approve">Approve</button>
+    <button name="action" value="reject">Reject</button>
+  </form>
+</article>
+{% endfor %}
+{% endblock %}
