@@ -30,7 +30,7 @@ GNews / RSS / sports APIs ──▶ collection ──▶ processing (dedupe, clu
 
 | Path | What lives there | Owner |
 |---|---|---|
-| `app/collection/` | GNews, RSS, sports score fetchers | Eric |
+| `app/collection/` | GNews, RSS, sports score fetchers | Eric | 
 | `app/db.py`, `scripts/run_daily.py` | SQLite schema, scheduler entry point | Eric |
 | `app/processing/` | Dedupe, story clustering, topic tagging | Braden |
 | `app/ranking/` | Profile ↔ story relevance ranking + feedback | Braden |
