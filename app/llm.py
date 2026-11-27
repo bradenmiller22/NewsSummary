@@ -3,21 +3,19 @@
 Summarizer and fact-checker deliberately use different providers (proposal:
 a different model gives an independent view).
 """
-from functools import lru_cache
+from dotenv import dotenv_values
 
 from app import config
 
 
-@lru_cache
 def anthropic_client():
     import anthropic
-    return anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
+    return anthropic.Anthropic(api_key=dotenv_values(config.ENV_PATH, interpolate=False).get("ANTHROPIC_API_KEY") or config.ANTHROPIC_API_KEY)
 
 
-@lru_cache
 def openai_client():
     from openai import OpenAI
-    return OpenAI(api_key=config.OPENAI_API_KEY)
+    return OpenAI(api_key=dotenv_values(config.ENV_PATH, interpolate=False).get("OPENAI_API_KEY") or config.OPENAI_API_KEY)
 
 
 def claude(prompt: str, model: str, system: str = "", max_tokens: int = 1024) -> str:

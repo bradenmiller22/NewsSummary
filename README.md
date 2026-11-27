@@ -13,7 +13,7 @@ audio).
 ```
 preferences form ──LLM──▶ profile.json
                                 │
-NewsAPI / Currents API / RSS / sports APIs ──▶ collection ──▶ processing (dedupe, cluster, tag)
+NewsAPI / Currents API / NewsData.io / sports APIs ──▶ collection ──▶ processing (dedupe, cluster, tag)
                                                  │
                                    ranking (embeddings + weights + feedback)
                                                  │
@@ -30,7 +30,7 @@ NewsAPI / Currents API / RSS / sports APIs ──▶ collection ──▶ proces
 
 | Path | What lives there | Owner |
 |---|---|---|
-| `app/collection/` | NewsAPI, Currents API, RSS, sports score fetchers | Eric |
+| `app/collection/` | NewsAPI, Currents API, NewsData.io, sports score fetchers | Eric |
 | `app/db.py`, `scripts/run_daily.py` | SQLite schema, scheduler entry point | Eric |
 | `app/processing/` | Dedupe, story clustering, topic tagging | Braden |
 | `app/ranking/` | Profile ↔ story relevance ranking + feedback | Braden |
@@ -63,14 +63,37 @@ Set `ADMIN_PASSWORD` in the project-root `.env`, then restart the web server.
 Open **Admin** at `/admin` and sign in with username `admin` and your chosen password.
 Use HTTPS when serving the app beyond localhost.
 
-Saving a Currents API or NewsAPI key updates `CURRENTSAPI_API_KEY` or
-`NEWSAPI_API_KEY` in that file. The web process needs write access, and the
+Saving a NewsData.io, Currents API, or NewsAPI key updates `NEWSDATAIO_API_KEY`,
+`CURRENTSAPI_API_KEY`, or `NEWSAPI_API_KEY` in that file. The web process needs write access, and the
 daily worker must read the same file. Keys are stored in plaintext. For older
 installations that only saved a key in SQLite, enter it once on the admin page.
 
-Set `OFFLINE_MODE=0` before starting the worker to enable live requests.
-Each collection reads fresh keys and requests one page per enabled provider.
-`NEWS_PROVIDERS` defaults to `newsapi,currentsapi`.
+Set `OFFLINE_MODE=0` and restart the server for live news. Save Preferences,
+then click the run button on Today to generate and display the daily digest.
+
+Admin also accepts OpenAI and Anthropic keys. For the full pipeline,
+`FACTCHECK_MODEL` defaults to `gpt-4.1-mini`; override it in `.env` with a
+Chat Completions model your OpenAI project can access and restart the worker.
+Each daily run first collects a general page from each enabled provider. Next it
+requests one page per provider per distinct saved topic, league or team across
+all profiles. Team and league searches include the sports category. For regional coverage, enter a US state
+(`Iowa` or `IA`), or a city, county, or region followed by a comma and state
+(`Iowa City, IA` or `Eastern Iowa, IA`). Enable NewsData.io in Admin.
+Each distinct state adds one NewsData.io query and each distinct area/state
+pair adds one more. These searches match place names in article metadata;
+small-town coverage depends on the publications indexed. For N distinct nonregional searches the base cost
+is 1 + N news calls per provider on a successful run. SQLite caches successful
+pages for the local calendar day, including empty results. Failed requests can
+be retried. The web Run button shares this cache with the scheduled job.
+
+Start the daily 6 AM local-time job with `python scripts/run_daily.py --schedule`
+and keep the process running. ESPN supplies yesterday's final scores and
+current standings for NFL, NBA, MLB and FBS football. Use official team names
+in Preferences for matching. Sports stories use the same news providers,
+summarization and fact-checking as the rest of the brief.
+`NEWS_PROVIDERS` defaults to `newsapi,currentsapi,newsdataio`.
+NewsData.io collects one page of top headlines using `category=top` and `datatype=news`.
+For a topic-specific digest, replace `top` with a category such as `business`.
 
 Run the daily pipeline once by hand:
 
@@ -91,7 +114,7 @@ the system keeps working.
 ## Team conventions
 
 - Branch per feature: `eric/apis`, `julian/tts`, etc. Open a PR into `main`.
-- Never commit `.env` or anything in `data/`. Manage the two news provider keys
+- Never commit `.env` or anything in `data/`. Manage the news provider keys
   through Admin. Keep server credentials in deployment settings or a local `.env`.
 - Stages talk to each other only through the types in `app/models.py`. If you
   need a new field, add it there in its own PR so everyone sees it.

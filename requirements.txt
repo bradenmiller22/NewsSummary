@@ -9,9 +9,8 @@ python-dotenv>=1.0
 filelock>=3.12
 pydantic>=2.7
 
-# HTTP + feeds
-httpx>=0.27
-feedparser>=6.0
+# HTTP
+httpx[socks]>=0.27
 
 # LLM providers
 anthropic>=0.40

@@ -24,13 +24,15 @@ class UserProfile(BaseModel):
 
 class Article(BaseModel):
     id: int | None = None
-    source: str                        # "newsapi", "currentsapi", "rss:<feed>", ...
+    source: str                        # "newsapi", "currentsapi", "newsdataio", ...
     url: str
     title: str
     description: str = ""
     content: str = ""
     published_at: datetime | None = None
     topic: str = ""
+    interests: list[str] = []
+    general: bool = True
 
 
 class Story(BaseModel):
@@ -39,6 +41,7 @@ class Story(BaseModel):
     headline: str
     article_ids: list[int] = []
     tags: list[str] = []               # topic / region / team tags
+    general: bool = True
     region: str = ""                   # "international" | "national" | "state" | "local"
 
 
@@ -92,6 +95,8 @@ class Digest(BaseModel):
     user_id: int
     created_at: datetime = Field(default_factory=datetime.now)
     items: list[DigestItem] = []
+    sports_story_ids: list[int] = []
+    standings: list[str] = []
     game_recaps: list[str] = []
     highlights: list[Highlight] = []
     audio_path: str | None = None

@@ -8,6 +8,12 @@ from contextlib import contextmanager
 from app import config
 
 SCHEMA = """
+CREATE TABLE IF NOT EXISTS daily_news_pages (
+    query TEXT PRIMARY KEY,
+    day TEXT NOT NULL,
+    articles_json TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS users (
     id           INTEGER PRIMARY KEY,
     name         TEXT,

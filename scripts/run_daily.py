@@ -18,6 +18,9 @@ def run_once():
     digests = pipeline.run_daily()
     print(f"Built {len(digests)} digest(s).")
 
+    #DEBUG
+    print(f"Digests: {digests}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -13,7 +13,7 @@ def admin(monkeypatch, tmp_path):
     monkeypatch.setattr(config, "ADMIN_PASSWORD", "test-password")
     monkeypatch.setattr(config, "ENV_PATH", tmp_path / ".env")
     config.ENV_PATH.write_text("OTHER=keep\n", encoding="utf-8")
-    monkeypatch.setattr(news_keys, "PROVIDERS", ("newsapi", "currentsapi"))
+    monkeypatch.setattr(news_keys, "PROVIDERS", ("newsapi", "currentsapi", "newsdataio"))
     with TestClient(app, headers={"Origin": "http://testserver"}) as client:
         client.auth = ("admin", "test-password")
         yield client
@@ -87,3 +87,48 @@ def test_newsapi_top_headlines(monkeypatch):
     assert article.source == "newsapi"
     assert article.description == ""
     assert article.published_at.hour == 14
+
+
+def test_newsdataio_admin_to_storage(admin, monkeypatch):
+    from app import pipeline
+    from app.db import connect
+
+    monkeypatch.setattr(config, "OFFLINE_MODE", False)
+    page = admin.get("/admin")
+    assert "/admin/keys/newsdataio" in page.text
+    result = admin.post("/admin/keys/newsdataio", data={"api_key": "test-newsdata-key"})
+    assert result.status_code == 200
+    assert "test-newsdata-key" not in result.text
+
+    def fake_get(url, *, headers, params, timeout):
+        assert url == "https://newsdata.io/api/1/latest"
+        assert headers == {"X-ACCESS-KEY": "test-newsdata-key"}
+        assert params == {"country": "us", "language": "en", "category": "top", "datatype": "news"}
+        item = {"link": "https://example.org/story", "title": "City approves budget",
+                "pubDate": "2026-11-25 17:30:00", "category": ["politics", "top"],
+                "description": "The council voted Wednesday.", "content": "ONLY AVAILABLE IN PAID PLANS"}
+        return httpx.Response(200, json={"status": "success", "results": [item]}, request=httpx.Request("GET", url))
+
+    monkeypatch.setattr(httpx, "get", fake_get)
+    article, = pipeline.collect()
+    assert article.id is not None
+    with connect() as conn:
+        stored = conn.execute("SELECT * FROM articles WHERE id = ?", (article.id,)).fetchone()
+    assert stored["source"] == "newsdataio"
+    assert stored["url"] == "https://example.org/story"
+    assert stored["topic"] == "politics"
+    assert stored["published_at"].startswith("2026-11-25T17:30:00")
+    assert stored["content"] == ""
+
+@pytest.mark.parametrize("provider", ["openai", "anthropic"])
+def test_admin_rotates_model_credentials(admin, monkeypatch, provider):
+    import sys
+    from types import SimpleNamespace
+    from app import llm
+
+    constructor = "OpenAI" if provider == "openai" else "Anthropic"
+    monkeypatch.setitem(sys.modules, provider, SimpleNamespace(**{constructor: lambda *, api_key: api_key}))
+    for key in ["first-model-secret", "second-model-secret"]:
+        response = admin.post(f"/admin/keys/{provider}", data={"api_key": key})
+        assert response.status_code == 200 and key not in response.text
+        assert getattr(llm, provider + "_client")() == key

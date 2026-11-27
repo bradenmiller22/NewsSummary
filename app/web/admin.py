@@ -27,14 +27,14 @@ router = APIRouter(prefix="/admin", dependencies=[Depends(require_admin)])
 
 def key_page(request, *, saved=None, error=None, status=200):
     return templates.TemplateResponse(request, "admin.html", {
-        "providers": news_keys.PROVIDERS, "configured": news_keys.configured_providers(),
+        "providers": news_keys.admin_providers(), "configured": news_keys.configured_providers(),
         "saved": saved, "error": error,
     }, status_code=status, headers={"Cache-Control": "no-store", "X-Frame-Options": "DENY"})
 
 
 @router.get("", response_class=HTMLResponse)
 def admin_page(request: Request, saved: str = ""):
-    return key_page(request, saved=saved if saved in news_keys.PROVIDERS else None)
+    return key_page(request, saved=saved if saved in news_keys.admin_providers() else None)
 
 
 @router.post("/keys/{provider}")
@@ -43,7 +43,7 @@ def update_key(request: Request, provider: str, api_key: str = Form("")):
     origin = f"{request.url.scheme}://{request.url.netloc}"
     if request.headers.get("origin") != origin:
         raise HTTPException(403, "Submit the form from the admin page.")
-    if provider not in news_keys.PROVIDERS:
+    if provider not in news_keys.admin_providers():
         raise HTTPException(404, "Unknown news provider.")
     try:
         news_keys.save_news_key(provider, api_key)

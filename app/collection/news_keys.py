@@ -9,21 +9,29 @@ from filelock import FileLock
 
 from app import config
 
-KEY_NAMES = {"newsapi": "NEWSAPI_API_KEY", "currentsapi": "CURRENTSAPI_API_KEY"}
+KEY_NAMES = {"newsapi": "NEWSAPI_API_KEY", "currentsapi": "CURRENTSAPI_API_KEY", "newsdataio": "NEWSDATAIO_API_KEY"}
 PROVIDERS = tuple(dict.fromkeys(
     name.strip().lower() for name in config.NEWS_PROVIDERS
     if name.strip().lower() in KEY_NAMES
 ))
 
 
+MODEL_KEYS = {"openai": "OPENAI_API_KEY", "anthropic": "ANTHROPIC_API_KEY"}
+
+
+def admin_providers():
+    return (*PROVIDERS, *MODEL_KEYS)
+
+
 def configured_providers() -> set[str]:
     values = dotenv_values(config.ENV_PATH, interpolate=False)
-    return {name for name in PROVIDERS if values.get(KEY_NAMES[name])}
+    names = KEY_NAMES | MODEL_KEYS
+    return {name for name in admin_providers() if values.get(names[name])}
 
 
 def save_news_key(provider: str, key: str) -> None:
-    if provider not in PROVIDERS:
-        raise ValueError("Unknown news provider")
+    if provider not in admin_providers():
+        raise ValueError("Unknown provider")
     key = key.strip()
     if not key or len(key) > 4096 or not key.isascii() or not key.isprintable() or " " in key:
         raise ValueError("Enter an API key of up to 4096 ASCII characters without whitespace.")
@@ -36,7 +44,7 @@ def save_news_key(provider: str, key: str) -> None:
         try:
             if config.ENV_PATH.exists():
                 shutil.copy2(config.ENV_PATH, staged)
-            set_key(staged, KEY_NAMES[provider], key.replace("\\", "\\\\"), quote_mode="always")
+            set_key(staged, (KEY_NAMES | MODEL_KEYS)[provider], key.replace("\\", "\\\\"), quote_mode="always")
             os.replace(staged, config.ENV_PATH)
         finally:
             staged.unlink(missing_ok=True)

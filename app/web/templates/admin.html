@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>News API keys</h1>
-<p>Save a key for each news provider. To rotate a key, enter its replacement below.</p>
+<h1>Provider API keys</h1>
+<p>Save a key for each news or model provider. To rotate a key, enter its replacement below.</p>
 {% if saved %}<p role="status">Key saved for <strong>{{ saved }}</strong>.</p>{% endif %}
 {% if error %}<p role="alert">{{ error }}</p>{% endif %}
 {% for provider in providers %}

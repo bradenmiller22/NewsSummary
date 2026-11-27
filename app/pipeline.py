@@ -7,11 +7,11 @@ import json
 from datetime import date
 
 from app import config
-from app.collection import rss, sports, store
+from app.collection import espn, store
 from app.collection.fetch_articles import fetch_articles
+from app.collection.interests import league_code, profile_searches
 from app.db import connect
 from app.models import Article, Digest, DigestItem, UserProfile
-from app.preferences.profile import load_profile
 from app.processing import cluster, tagging
 from app.ranking import rank
 from app.sports import highlights, recaps
@@ -19,10 +19,9 @@ from app.summarize import factcheck, summarizer
 from app.tts import tts
 
 
-def collect() -> list[Article]:
-    articles = fetch_articles()
-    for feed in config.RSS_FEEDS:
-        articles += rss.fetch_feed(feed)
+def collect(profiles=()) -> list[Article]:
+    searches = [search for profile in profiles for search in profile_searches(profile)]
+    articles = fetch_articles(searches=searches, cache_daily=True)
     return store.save_articles(articles)
 
 
@@ -60,7 +59,10 @@ def build_digest(profile: UserProfile, stories, articles_by_id, games) -> Digest
 
 
 def run_daily() -> list[Digest]:
-    articles = collect()
+    with connect() as conn:
+        profiles = [UserProfile.model_validate_json(row["profile_json"]) for row in
+                    conn.execute("SELECT profile_json FROM users ORDER BY id")]
+    articles = collect(profiles)
     articles_by_id = {a.id: a for a in articles if a.id}
 
     stories = tagging.tag(cluster.cluster(articles), articles_by_id)
@@ -72,16 +74,15 @@ def run_daily() -> list[Digest]:
             conn.executemany("INSERT OR IGNORE INTO story_articles VALUES (?, ?)",
                              [(s.id, aid) for aid in s.article_ids])
 
-    games = [g for league in config.SPORTS_LEAGUES for g in sports.fetch_scores(league)]
-
-    with connect() as conn:
-        user_ids = [r["id"] for r in conn.execute("SELECT id FROM users")]
+    followed = {league_code(name) for p in profiles for name in p.leagues}
+    # Team preferences are free text, so search all supported leagues for team-only follows.
+    leagues = [league for league in config.SPORTS_LEAGUES
+               if league in followed or any(p.teams for p in profiles)]
+    games = [game for league in leagues for game in espn.fetch_scores(league)]
 
     digests = []
-    for uid in user_ids:
-        profile = load_profile(uid)
-        if not profile:
-            continue
+    for profile in profiles:
+        uid = profile.user_id
         digest = build_digest(profile, stories, articles_by_id, games)
         with connect() as conn:
             conn.execute("INSERT INTO digests (user_id, digest_json) VALUES (?, ?)",

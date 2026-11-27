@@ -10,8 +10,8 @@ from fastapi.templating import Jinja2Templates
 
 from app import config, pipeline
 from app.db import connect, init_db
-from app.models import Digest
-from app.preferences.profile import build_profile, load_profile, save_profile
+from app.models import Depth, Digest, UserProfile
+from app.preferences.profile import load_profile, save_profile
 from app.web.admin import router as admin_router
 
 HERE = Path(__file__).parent
@@ -52,12 +52,12 @@ def preferences_form(request: Request):
 
 @app.post("/preferences")
 def preferences_submit(location: str = Form(""), teams: str = Form(""), leagues: str = Form(""),
-                       topics: str = Form(""), depth: str = Form("standard"),
+                       topics: str = Form(""), depth: Depth = Form(Depth.standard),
                        leaning: str = Form("balanced"), audio: bool = Form(False)):
     split = lambda s: [x.strip() for x in s.split(",") if x.strip()]
     answers = {"location": location, "teams": split(teams), "leagues": split(leagues),
                "topics": split(topics), "depth": depth, "leaning": leaning, "audio": audio}
-    save_profile(build_profile(USER_ID, answers))
+    save_profile(UserProfile(user_id=USER_ID, **answers))
     return RedirectResponse("/", status_code=303)
 
 
@@ -71,7 +71,6 @@ def feedback(story_id: int = Form(...), value: int = Form(...)):
 
 @app.post("/run")
 def run_now():
-    """Dev convenience: trigger the daily pipeline from the UI."""
     pipeline.run_daily()
     return RedirectResponse("/", status_code=303)
 
