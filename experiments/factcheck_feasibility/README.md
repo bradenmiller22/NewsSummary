@@ -3,7 +3,7 @@
 From the proposal: can the checker (OpenAI) tell faithful summaries from ones
 with planted errors?
 
-**Setup**: 10 source/summary pairs from real GNews articles (150–300 words each).
+**Setup**: 10 source/summary pairs from real news articles (150–300 words each).
 4 summaries are faithful; 6 have a hand-planted error.
 
 **Pass criteria**: checker flags ≥ 5 of 6 planted errors (recall > 80%) and

@@ -13,7 +13,7 @@ audio).
 ```
 preferences form ──LLM──▶ profile.json
                                 │
-GNews / RSS / sports APIs ──▶ collection ──▶ processing (dedupe, cluster, tag)
+NewsAPI / Currents API / RSS / sports APIs ──▶ collection ──▶ processing (dedupe, cluster, tag)
                                                  │
                                    ranking (embeddings + weights + feedback)
                                                  │
@@ -30,7 +30,7 @@ GNews / RSS / sports APIs ──▶ collection ──▶ processing (dedupe, clu
 
 | Path | What lives there | Owner |
 |---|---|---|
-| `app/collection/` | GNews, RSS, sports score fetchers | Eric | 
+| `app/collection/` | NewsAPI, Currents API, RSS, sports score fetchers | Eric |
 | `app/db.py`, `scripts/run_daily.py` | SQLite schema, scheduler entry point | Eric |
 | `app/processing/` | Dedupe, story clustering, topic tagging | Braden |
 | `app/ranking/` | Profile ↔ story relevance ranking + feedback | Braden |
@@ -53,10 +53,24 @@ git clone <repo-url> && cd daily-brief
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env               # then fill in your API keys
 python scripts/init_db.py          # creates data/daily_brief.db
 uvicorn app.web.main:app --reload  # http://127.0.0.1:8000
 ```
+
+### News API administration
+
+Set `ADMIN_PASSWORD` in the project-root `.env`, then restart the web server.
+Open **Admin** at `/admin` and sign in with username `admin` and your chosen password.
+Use HTTPS when serving the app beyond localhost.
+
+Saving a Currents API or NewsAPI key updates `CURRENTSAPI_API_KEY` or
+`NEWSAPI_API_KEY` in that file. The web process needs write access, and the
+daily worker must read the same file. Keys are stored in plaintext. For older
+installations that only saved a key in SQLite, enter it once on the admin page.
+
+Set `OFFLINE_MODE=0` before starting the worker to enable live requests.
+Each collection reads fresh keys and requests one page per enabled provider.
+`NEWS_PROVIDERS` defaults to `newsapi,currentsapi`.
 
 Run the daily pipeline once by hand:
 
@@ -76,8 +90,9 @@ the system keeps working.
 
 ## Team conventions
 
-- Branch per feature: `eric/gnews-collector`, `julian/tts`, etc. Open a PR into `main`.
-- Never commit `.env` or anything in `data/`. API keys go in `.env` only.
+- Branch per feature: `eric/apis`, `julian/tts`, etc. Open a PR into `main`.
+- Never commit `.env` or anything in `data/`. Manage the two news provider keys
+  through Admin. Keep server credentials in deployment settings or a local `.env`.
 - Stages talk to each other only through the types in `app/models.py`. If you
   need a new field, add it there in its own PR so everyone sees it.
 - Model names live in `.env` / `app/config.py`, never hard-coded in a stage.

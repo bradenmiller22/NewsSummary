@@ -5,7 +5,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parent.parent
-load_dotenv(ROOT / ".env")
+ENV_PATH = ROOT / ".env"
+load_dotenv(ENV_PATH)
 
 
 def _get(name: str, default: str = "") -> str:
@@ -13,9 +14,11 @@ def _get(name: str, default: str = "") -> str:
 
 
 # API keys
+ADMIN_PASSWORD = _get("ADMIN_PASSWORD")
+NEWS_PROVIDERS = _get("NEWS_PROVIDERS", "newsapi, currentsapi").split(",")
 ANTHROPIC_API_KEY = _get("ANTHROPIC_API_KEY")
 OPENAI_API_KEY = _get("OPENAI_API_KEY")
-GNEWS_API_KEY = _get("GNEWS_API_KEY")
+
 YOUTUBE_API_KEY = _get("YOUTUBE_API_KEY")
 ELEVENLABS_API_KEY = _get("ELEVENLABS_API_KEY")
 

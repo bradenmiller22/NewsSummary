@@ -24,7 +24,7 @@ class UserProfile(BaseModel):
 
 class Article(BaseModel):
     id: int | None = None
-    source: str                        # "gnews", "rss:<feed>", ...
+    source: str                        # "newsapi", "currentsapi", "rss:<feed>", ...
     url: str
     title: str
     description: str = ""

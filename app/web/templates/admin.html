@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>News API keys</h1>
+<p>Save a key for each news provider. To rotate a key, enter its replacement below.</p>
+{% if saved %}<p role="status">Key saved for <strong>{{ saved }}</strong>.</p>{% endif %}
+{% if error %}<p role="alert">{{ error }}</p>{% endif %}
+{% for provider in providers %}
+<section class="story" aria-labelledby="heading-{{ provider }}">
+  <h2 id="heading-{{ provider }}">{{ provider }}</h2>
+  <p class="muted">{{ "Key saved" if provider in configured else "No key saved" }}</p>
+  <form class="prefs" method="post" action="/admin/keys/{{ provider }}">
+    <label>{{ "Replacement" if provider in configured else "API" }} key for {{ provider }}
+      <input type="password" name="api_key" required maxlength="4096"
+             autocomplete="new-password" spellcheck="false">
+    </label>
+    <button type="submit">Save key</button>
+  </form>
+</section>
+{% endfor %}
+{% endblock %}

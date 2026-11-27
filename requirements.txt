@@ -6,6 +6,7 @@ python-multipart>=0.0.9
 
 # Config / data types
 python-dotenv>=1.0
+filelock>=3.12
 pydantic>=2.7
 
 # HTTP + feeds

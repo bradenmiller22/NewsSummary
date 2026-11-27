@@ -1,5 +1,6 @@
 # Secrets
 .env
+.env.lock
 
 # Python
 __pycache__/
@@ -15,6 +16,7 @@ audio/
 *.db
 
 # Editors / OS
+.vs
 .vscode/
 .idea/
 .DS_Store

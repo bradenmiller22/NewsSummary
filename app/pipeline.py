@@ -7,7 +7,8 @@ import json
 from datetime import date
 
 from app import config
-from app.collection import gnews, rss, sports, store
+from app.collection import rss, sports, store
+from app.collection.fetch_articles import fetch_articles
 from app.db import connect
 from app.models import Article, Digest, DigestItem, UserProfile
 from app.preferences.profile import load_profile
@@ -19,9 +20,7 @@ from app.tts import tts
 
 
 def collect() -> list[Article]:
-    articles: list[Article] = []
-    for topic in config.NEWS_TOPICS:
-        articles += gnews.fetch_topic(topic)
+    articles = fetch_articles()
     for feed in config.RSS_FEEDS:
         articles += rss.fetch_feed(feed)
     return store.save_articles(articles)

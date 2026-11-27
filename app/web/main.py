@@ -12,6 +12,7 @@ from app import config, pipeline
 from app.db import connect, init_db
 from app.models import Digest
 from app.preferences.profile import build_profile, load_profile, save_profile
+from app.web.admin import router as admin_router
 
 HERE = Path(__file__).parent
 
@@ -23,6 +24,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="Daily Brief", lifespan=lifespan)
+app.include_router(admin_router)
 templates = Jinja2Templates(directory=HERE / "templates")
 app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
 (config.ROOT / "audio").mkdir(exist_ok=True)
